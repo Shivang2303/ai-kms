@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-kms-config
+  namespace: ai-kms
+data:
+  # Database
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_USER: "postgres"
+  DB_NAME: "ai_kms"
+  DB_SSLMODE: "disable"
+
+  # Server
+  SERVER_HOST: "0.0.0.0"
+  SERVER_PORT: "8080"
+
+  # Worker Pool
+  EMBEDDING_WORKERS: "5"
+  EMBEDDING_QUEUE_SIZE: "100"
+
+  # Observability
+  JAEGER_ENDPOINT: "http://jaeger-collector:14268/api/traces"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ai-kms-secrets
+  namespace: ai-kms
+type: Opaque
+stringData:
+  # Database password
+  DB_PASSWORD: "postgres"  # TODO: Use proper secrets management in production
+  
+  # OpenAI API Key
+  OPENAI_API_KEY: "your-openai-api-key-here"  # TODO: Set this before deploying

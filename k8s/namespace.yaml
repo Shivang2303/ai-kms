@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai-kms
+  labels:
+    app: ai-kms
+    environment: production

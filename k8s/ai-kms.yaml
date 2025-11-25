@@ -1,0 +1,172 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-kms
+  namespace: ai-kms
+  labels:
+    app: ai-kms
+spec:
+  replicas: 3  # Horizontal scaling
+  selector:
+    matchLabels:
+      app: ai-kms
+  template:
+    metadata:
+      labels:
+        app: ai-kms
+    spec:
+      containers:
+      - name: ai-kms
+        image: your-registry/ai-kms:latest  # TODO: Update with your registry
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        env:
+        # Database config from ConfigMap
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: ai-kms-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: ai-kms-config
+              key: DB_PORT
+        - name: DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: ai-kms-config
+              key: DB_USER
+        - name: DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: ai-kms-config
+              key: DB_NAME
+        - name: DB_SSLMODE
+          valueFrom:
+            configMapKeyRef:
+              name: ai-kms-config
+              key: DB_SSLMODE
+        
+        # Database password from Secret
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-kms-secrets
+              key: DB_PASSWORD
+        
+        # OpenAI from Secret
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ai-kms-secrets
+              key: OPENAI_API_KEY
+        
+        # Server config from ConfigMap
+        - name: SERVER_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: ai-kms-config
+              key: SERVER_HOST
+        - name: SERVER_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: ai-kms-config
+              key: SERVER_PORT
+        
+        # Worker pool from ConfigMap
+        - name: EMBEDDING_WORKERS
+          valueFrom:
+            configMapKeyRef:
+              name: ai-kms-config
+              key: EMBEDDING_WORKERS
+        - name: EMBEDDING_QUEUE_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: ai-kms-config
+              key: EMBEDDING_QUEUE_SIZE
+        
+        # Jaeger from ConfigMap
+        - name: JAEGER_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: ai-kms-config
+              key: JAEGER_ENDPOINT
+        
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+        
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-kms-service
+  namespace: ai-kms
+  labels:
+    app: ai-kms
+spec:
+  type: LoadBalancer  # Change to NodePort or ClusterIP based on your needs
+  sessionAffinity: ClientIP  # Important for WebSocket sticky sessions
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600  # 1 hour for WebSocket connections
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: ai-kms
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ai-kms-hpa
+  namespace: ai-kms
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-kms
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

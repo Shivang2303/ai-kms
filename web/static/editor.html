@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Editor - AI KMS</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Document Editor</h1>
+            <nav>
+                <a href="/">Back to Documents</a>
+            </nav>
+        </header>
+
+        <main>
+            <div class="editor-header">
+                <input type="text" id="doc-title" placeholder="Document Title" class="title-input">
+                <div class="editor-actions">
+                    <button id="save-btn" class="btn-primary">Save</button>
+                    <button id="summarize-btn" class="btn-secondary">Summarize</button>
+                    <button id="generate-graph-btn" class="btn-secondary">Generate Graph</button>
+                </div>
+            </div>
+
+            <div class="editor-container">
+                <textarea id="editor" placeholder="Start writing..."></textarea>
+            </div>
+
+            <div id="ai-panel" class="ai-panel hidden">
+                <h3>AI Assistant</h3>
+                <div id="ai-content"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/editor.js"></script>
+</body>
+</html>
+
